@@ -1,5 +1,6 @@
 const express = require('express');
 const inquirer = require('inquirer');
+let allDpts = [];
 // Import and require mysql2
 const mysql = require('mysql2');
 
@@ -27,44 +28,132 @@ const introQuestion = [
     {
         type: 'rawlist',
         name: 'intro',
-        message: 'What is the team manager\'s name?',
-        choices: ['View all Departments', 'View all Roles', 'View all Employees', 'Add a Department', 'Add a Role', 'Add an Employee', ' Update an Employee Role']
+        message: 'What would you like to do:',
+        choices: [
+            'View all Departments',
+            'View all Roles',
+            'View all Employees',
+            'Add a Department',
+            'Add a Role',
+            'Add an Employee',
+            'Update an Employee Role'
+        ]
     },
 ]
 
 const departmentQuestion = [
     {
         type: 'input',
-        name: 'dept',
+        name: 'dept_name',
         message: 'Enter department name: '
-      
+
     }
-]
+];
+
+const roleQuestions = [
+    {
+        type: 'input',
+        name: 'title',
+        message: 'Whats the name of the role? '
+
+    },
+
+    {
+        type: 'input',
+        name: 'salary',
+        message: 'Whats the Salary of the role?'
+
+    },
+
+    {
+        type: 'list',
+        name: 'department',
+        message: 'What department does the role belong to?',
+        choices: allDpts
+        
+    }
+];
+
+function viewAllDepartmentsByName() {
+    const sql = 'SELECT * FROM department'
+    db.query(sql, function (err, results) {
+        if (err) {
+            console.log(err.message);
+            return;
+        } else {
+            for (let i = 0; i < results.length; i ++) {
+                allDpts.push(results[i].dept_name)
+            }
+        }
+    });
+
+
+};
+ 
+
+
 // Query database
 function viewAllDepartments() {
-    db.query('SELECT id, dept_name FROM department', function (err, results) {
+    const sql = 'SELECT * FROM department'
+    db.query(sql, function (err, results) {
         console.table(results);
     });
 
-    init();
+    // init();
 }
+
+
 function viewAllRoles() {
-db.query('SELECT id, title, salary, department_id  FROM role', function (err, results) {
-    console.table(results);
-});
-}
-function viewAllEmployees() {
-db.query('SELECT * FROM employee', function (err, results) {
-    console.table(results);
-});
-}
-function addDepartment() {
-    inquirer.prompt(departmentQuestion).then((data) => {
-        const newDepartment = data.dept;
+    const sql = 'SELECT role.id, role.title, role.salary, role.department_id, department.dept_name FROM role JOIN department ON role.department_id = department.id;'
+    db.query(sql, function (err, results) {
+        console.table(results);
     });
 
+    // init();
 }
 
+
+function viewAllEmployees() {
+    const sql = 'SELECT employee.id, employee.first_name, employee.last_name, employee.role_id, role.title, role.salary, role.department_id, department.dept_name FROM employee JOIN role ON employee.role_id = role.id JOIN department ON employee.role_id = department.id;'
+    db.query(sql, function (err, results) {
+        console.table(results);
+    });
+
+    // init();
+}
+
+
+function addDepartment() {
+    inquirer.prompt(departmentQuestion).then((data) => {
+        const newDepartment = data.dept_name;
+        const sql = `INSERT INTO department (dept_name) VALUES (?)`
+        db.query(sql, newDepartment, (err, result) => {
+            if (err) {
+                console.log(err);
+            }
+            console.log(result);
+        });
+    });
+
+    // init();
+};
+
+function addRole() {
+    inquirer.prompt(roleQuestions).then((data) => {
+        const newRole = data.title;
+        const newSalary = parseInt(data.salary);
+        const dptId = data.department;
+        console.log(newRole, newSalary, dptId)
+        db.query(`INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`, [newRole, newSalary, dptId], (err, result) => {
+            if (err) {
+                console.log(err);
+            }
+            console.log(result);
+        });
+    });
+
+    // init();
+};
 
 
 // Default response for any other request (Not Found)
@@ -102,7 +191,7 @@ function init() {
             addDepartment()
         }
         else if (data.intro === 'Add a Role') {
-            internInit()
+            addRole()
         }
         else if (data.intro === 'Add an Employee') {
             internInit()
@@ -118,6 +207,6 @@ function init() {
 
 }
 
-
+viewAllDepartmentsByName();
 //initialize 
 init();

@@ -3,14 +3,14 @@ VALUES ("Sales"),
        ("Marketing"),
        ("Finances"),
        ("Human Resources"),
-       ("Dept 5");
+       ("Customer Service");
 
 INSERT INTO role (title, salary, department_id)
-VALUES ("Manager", 2000.00, 1 ),
-       ("Engineer", 1000.00, 2),
-       ("Accountant", 5000.00, 3),
-       ("Intern", 6000.00, 4),
-       ("Customer Service", 4000.00, 5);
+VALUES ("Account Executive", 2000.00, 1 ),
+       ("Digital Marketing", 1000.00, 2),
+       ("Data Analyst", 5000.00, 3),
+       ("Admission Specialist", 6000.00, 4),
+       ("Customer Success Associate", 4000.00, 5);
 
 INSERT INTO employee (first_name, last_name, role_id)
 VALUES ("Jose", "Barreto", 1),
