@@ -223,14 +223,14 @@ function viewAllEmployees() {
 
 // function to add a new department
 function addDepartment() {
-    inquirer.prompt(departmentQuestion).then((data) => {
-        const newDepartment = data.dept_name;
+    inquirer.prompt(departmentQuestion).then((answers) => {
+        const newDepartment = answers.dept_name;
         const sql = `INSERT INTO department (dept_name) VALUES (?)`
         db.query(sql, newDepartment, (err, result) => {
             if (err) {
                 console.log(err);
             }
-            console.log(result);
+            console.log(`${answers.dept_name} has been added as a new department`);
         });
     });
 
@@ -272,7 +272,7 @@ function addRole() {
                 init();
             }
             else {
-                console.table(result);
+                console.log(`${answers.title} has been succesfully added as a new Role`);
                 // reset all departments to empty
                 allDpts = []
                 // call init
@@ -319,7 +319,7 @@ function addEmployee() {
                 init();
             }
             else {
-                console.table(result);
+                console.log(`${answers.firstName} ${answers.lastName} has been added as an Employee`);
                 // reset role list to empty array
                 allRoles = []
                 // call init function
@@ -331,17 +331,48 @@ function addEmployee() {
 }
 
 //function to update an Employee role
-function updateEmployee(){
+function updateEmployee() {
+    let roleId = 0;
+    let employeeId = 0;
+
     viewRoles();
     
-    inquirer.prompt(updateEmployeeQuestions).then((data) => {
+    inquirer.prompt(updateEmployeeQuestions).then((answers) => {
 
-        console.log(data.employee);
-        console.log(data.roles);
 
-        let fullName = data.employee.split(' ');
-        let fname = fullName[0];
-        let lname = fullName[1];
+        for(let i = 0; i < allRoles.length; i ++) {
+            // if the answer matches any of the roles in list
+                // role id = index + 1 of role in list
+             if(allRoles[i] === answers.roles) {
+                roleId = i + 1;
+                
+             }
+        }
+
+        // get employee id by looping through the list of employees
+        for(let i = 0; i < allEmployees.length; i ++) {
+            // if the answer matches any of the roles in list
+                // role id = index + 1 of role in list
+             if(allEmployees[i] === answers.employee) {
+                
+                employeeId = i + 1;
+             }
+        }
+
+        db.query(`UPDATE employee SET role_id = ${roleId} WHERE id = ${employeeId}`,  function (err, result) {
+            if (err) {
+                console.log(err.message);
+                init();
+            }
+            else {
+                console.log(`${answers.employee} role updated to ${answers.roles}`);
+                //printTable(result);
+                // reset department list to empty array 
+                allRoles = []
+                // call main menu
+                init();
+            }        
+        });
 
 
 
@@ -368,31 +399,31 @@ app.listen(PORT, () => {
 // initial function 
 function init() {
 
-    inquirer.prompt(introQuestion).then((data) => {
+    inquirer.prompt(introQuestion).then((answers) => {
         //    const manager = new Manager(data.managerName, data.managerId, data.managerEmail, data.officeNumber)
         //    myTeam.push(manager)
 
         //filter if they choose they want to add an engineer or Intern
-        if (data.intro === 'View all Departments') {
+        if (answers.intro === 'View all Departments') {
             viewAllDepartments()
         }
 
-        else if (data.intro === 'View all Roles') {
+        else if (answers.intro === 'View all Roles') {
             viewAllRoles();
         }
-        else if (data.intro === 'View all Employees') {
+        else if (answers.intro === 'View all Employees') {
             viewAllEmployees()
         }
-        else if (data.intro === 'Add a Department') {
+        else if (answers.intro === 'Add a Department') {
             addDepartment()
         }
-        else if (data.intro === 'Add a Role') {
+        else if (answers.intro === 'Add a Role') {
             addRole()
         }
-        else if (data.intro === 'Add an Employee') {
+        else if (answers.intro === 'Add an Employee') {
            addEmployee()
         }
-        else if (data.intro === 'Update an Employee Role') {
+        else if (answers.intro === 'Update an Employee Role') {
             updateEmployee()
         }
         
@@ -403,3 +434,4 @@ function init() {
 
 //initialize 
 init();
+
