@@ -231,6 +231,7 @@ function addDepartment() {
                 console.log(err);
             }
             console.log(`${answers.dept_name} has been added as a new department`);
+            init();
         });
     });
 
