@@ -28,8 +28,6 @@ CREATE TABLE employee (
   role_id INT ,
   manager_id INT,
   date_updated DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-  FOREIGN KEY (role_id)
-  REFERENCES role(id)
-  ON DELETE SET NULL,
+  FOREIGN KEY (role_id) REFERENCES role(id) ON DELETE SET NULL,
   PRIMARY KEY (id)
 );

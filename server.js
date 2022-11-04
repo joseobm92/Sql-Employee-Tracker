@@ -1,6 +1,9 @@
 const express = require('express');
 const inquirer = require('inquirer');
+const cTable = require('console.table');
 let allDpts = [];
+let allRoles = [];
+let allEmployees = [];
 // Import and require mysql2
 const mysql = require('mysql2');
 
@@ -26,7 +29,7 @@ const db = mysql.createConnection(
 
 const introQuestion = [
     {
-        type: 'rawlist',
+        type: 'list',
         name: 'intro',
         message: 'What would you like to do:',
         choices: [
@@ -39,7 +42,7 @@ const introQuestion = [
             'Update an Employee Role'
         ]
     },
-]
+];
 
 const departmentQuestion = [
     {
@@ -70,7 +73,48 @@ const roleQuestions = [
         name: 'department',
         message: 'What department does the role belong to?',
         choices: allDpts
-        
+
+    }
+];
+
+const employeeQuestions = [
+    {
+        type: 'input',
+        name: 'firstName',
+        message: 'Whats is the employee first name?'
+
+    },
+
+    {
+        type: 'input',
+        name: 'lastName',
+        message: 'Whats is the employee last name?'
+
+    },
+
+    {
+        type: 'list',
+        name: 'roles',
+        message: 'What is the employees role?',
+        choices: allRoles
+
+    }
+];
+
+const updateEmployeeQuestions =[
+    {
+        type: 'list',
+        name: 'employee',
+        message: 'Select the employee you want to update:',
+        choices: allEmployees
+
+    },
+
+    {
+        type: 'list',
+        name: 'roles',
+        message: 'Whats the new role of the employee',
+        choices: allRoles
     }
 ];
 
@@ -81,22 +125,54 @@ function viewAllDepartmentsByName() {
             console.log(err.message);
             return;
         } else {
-            for (let i = 0; i < results.length; i ++) {
-                allDpts.push(results[i].dept_name)
+            for (let i = 0; i < results.length; i++) {
+                allDpts.push(results[i].dept_name);
             }
         }
     });
-
-
 };
- 
+
+function viewRoles() {
+    const sql = 'SELECT * FROM role'
+    db.query(sql, function (err, results) {
+        if (err) {
+            console.log(err.message);
+            return;
+        } else {
+            for (let i = 0; i < results.length; i++) {
+                allRoles.push(results[i].title);
+            }
+        }
+    });
+};
+
+function viewEmployees() {
+    const sql = 'SELECT * FROM employee'
+    db.query(sql, function (err, results) {
+        if (err) {
+            console.log(err.message);
+            return;
+        } else {
+            for (let i = 0; i < results.length; i++) {
+                allEmployees.push(results[i].first_name + " " + results[i].last_name);
+            } console.log(allEmployees)
+        }
+    });
+}
+
 
 
 // Query database
 function viewAllDepartments() {
     const sql = 'SELECT * FROM department'
     db.query(sql, function (err, results) {
-        console.table(results);
+        if (err) {
+            console.log(err.message);
+            init()
+        } else {
+            console.table(results);
+            init()
+        }
     });
 
     // init();
@@ -104,9 +180,16 @@ function viewAllDepartments() {
 
 
 function viewAllRoles() {
+
     const sql = 'SELECT role.id, role.title, role.salary, role.department_id, department.dept_name FROM role JOIN department ON role.department_id = department.id;'
     db.query(sql, function (err, results) {
-        console.table(results);
+        if (err) {
+            console.log(err.message);
+            init()
+        } else {
+            console.table(results);
+            init()
+        }
     });
 
     // init();
@@ -139,21 +222,108 @@ function addDepartment() {
 };
 
 function addRole() {
-    inquirer.prompt(roleQuestions).then((data) => {
-        const newRole = data.title;
-        const newSalary = parseInt(data.salary);
-        const dptId = data.department;
-        console.log(newRole, newSalary, dptId)
-        db.query(`INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`, [newRole, newSalary, dptId], (err, result) => {
-            if (err) {
-                console.log(err);
+    //get list of current departments
+    viewAllDepartmentsByName();
+    // set depID index = 1
+    let depID = 0;
+    inquirer.prompt(roleQuestions).then((answers) => {
+        //log results from input
+        console.log(answers.title);
+        let salary = parseInt(answers.salary);
+        console.log(salary);
+        console.log(answers.department);
+        console.log(allDpts);
+
+        //get department id by looping through list of dep
+        for (let i = 0; i < allDpts.length; i++) {
+            // if the answer matches any of the departments in list
+            // dep id = index + 1 of department in list
+            if (allDpts[i] === answers.department) {
+                console.log(allDpts[i]);
+                console.log(answers.department);
+                depID = i + 1;
+                console.log(depID);
             }
-            console.log(result);
+        }
+
+        const sql = `INSERT INTO role SET ?`
+        const params = {
+            title: answers.title,
+            salary: salary,
+            department_id: depID
+        };
+        console.log(params);
+        db.query(sql, params, (err, result) => {
+            if (err) {
+                console.log(err.message);
+                init();
+            }
+            else {
+                console.table(result);
+                // reset department list to empty array 
+                allDpts = []
+                // call main menu
+                init();
+            }
+        });
+    });
+};
+
+function addEmployee() {
+
+    viewRoles();
+    let rolesId = 0
+    inquirer.prompt(employeeQuestions).then((answers) => {
+        //log results from input
+        console.log(answers.firstName);
+        console.log(answers.lastName);
+        console.log(answers.roles);
+        console.log(allRoles);
+
+        for (let i = 0; i < allRoles.length; i++) {
+            // if the answer matches any of the departments in list
+            // dep id = index + 1 of department in list
+            if (allRoles[i] === answers.roles) {
+                console.log(allRoles[i]);
+                console.log(answers.roles);
+                rolesId = i + 1;
+                console.log(rolesId);
+            }
+        }
+
+
+        const sql = `INSERT INTO employee SET ?`
+        const params = {
+            first_name: answers.firstName,
+            last_name: answers.lastName,
+            role_id: rolesId
+        };
+        console.log(params);
+        db.query(sql, params, (err, result) => {
+            if (err) {
+                console.log(err.message);
+                init();
+            }
+            else {
+                console.table(result);
+                // reset department list to empty array 
+                allRoles = []
+                // call main menu
+                init();
+            }
         });
     });
 
-    // init();
-};
+}
+
+function updateEmployee(){
+
+    viewEmployees();
+
+    
+    
+
+}
 
 
 // Default response for any other request (Not Found)
@@ -173,7 +343,6 @@ function init() {
 
     inquirer.prompt(introQuestion).then((data) => {
         //    const manager = new Manager(data.managerName, data.managerId, data.managerEmail, data.officeNumber)
-
         //    myTeam.push(manager)
 
         //filter if they choose they want to add an engineer or Intern
@@ -182,7 +351,7 @@ function init() {
         }
 
         else if (data.intro === 'View all Roles') {
-            viewAllRoles()
+            viewAllRoles();
         }
         else if (data.intro === 'View all Employees') {
             viewAllEmployees()
@@ -194,19 +363,16 @@ function init() {
             addRole()
         }
         else if (data.intro === 'Add an Employee') {
-            internInit()
+           addEmployee()
         }
         else if (data.intro === 'Update an Employee Role') {
-            internInit()
+            updateEmployee()
         }
-        //    else {
-        //     writeToFile(myTeam) 
-        //    }
-
+        
     });
 
 }
 
-viewAllDepartmentsByName();
+
 //initialize 
 init();
