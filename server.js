@@ -234,8 +234,6 @@ function addDepartment() {
             init();
         });
     });
-
-  
 };
 
 //function to add a new role
@@ -291,18 +289,14 @@ function addEmployee() {
     let rolesId = 0
     inquirer.prompt(employeeQuestions).then((answers) => {
         //log results from input
-        console.log(answers.firstName);
-        console.log(answers.lastName);
-        console.log(answers.roles);
-        console.log(allRoles);
+        
 
         for (let i = 0; i < allRoles.length; i++) {
             
             if (allRoles[i] === answers.roles) {
-                console.log(allRoles[i]);
-                console.log(answers.roles);
+                
                 rolesId = i + 1;
-                console.log(rolesId);
+                
             }
         }
 
@@ -313,7 +307,7 @@ function addEmployee() {
             last_name: answers.lastName,
             role_id: rolesId
         };
-        console.log(params);
+        
         db.query(sql, params, (err, result) => {
             if (err) {
                 console.log(err.message);
@@ -374,13 +368,6 @@ function updateEmployee() {
                 init();
             }        
         });
-
-
-
-
-
-        
-        
     });
 }
 
@@ -401,10 +388,9 @@ app.listen(PORT, () => {
 function init() {
 
     inquirer.prompt(introQuestion).then((answers) => {
-        //    const manager = new Manager(data.managerName, data.managerId, data.managerEmail, data.officeNumber)
-        //    myTeam.push(manager)
+       
 
-        //filter if they choose they want to add an engineer or Intern
+        //filter depending on the user choice 
         if (answers.intro === 'View all Departments') {
             viewAllDepartments()
         }
