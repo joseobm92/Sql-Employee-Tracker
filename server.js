@@ -1,12 +1,16 @@
 const express = require('express');
 const inquirer = require('inquirer');
 const cTable = require('console.table');
+
+//Empty arrays to receive all departments, all roles, and all employees to use in Questions, and add role and add employee functions
 let allDpts = [];
 let allRoles = [];
 let allEmployees = [];
+
 // Import and require mysql2
 const mysql = require('mysql2');
 
+//assigning port 
 const PORT = process.env.PORT || 3001;
 const app = express();
 
@@ -27,6 +31,7 @@ const db = mysql.createConnection(
     console.log(`Connected to the company_db database.`)
 );
 
+// introductory question with choices
 const introQuestion = [
     {
         type: 'list',
@@ -44,6 +49,7 @@ const introQuestion = [
     },
 ];
 
+//variable with department question to be used when adding a new department
 const departmentQuestion = [
     {
         type: 'input',
@@ -53,6 +59,7 @@ const departmentQuestion = [
     }
 ];
 
+//variable with role questions to be used when adding a new role
 const roleQuestions = [
     {
         type: 'input',
@@ -77,6 +84,7 @@ const roleQuestions = [
     }
 ];
 
+//variable with employee questions to be used when add new employee
 const employeeQuestions = [
     {
         type: 'input',
@@ -101,12 +109,13 @@ const employeeQuestions = [
     }
 ];
 
-const updateEmployeeQuestions =[
+//varible with update employee questions
+const updateEmployeeQuestions = [
     {
         type: 'list',
         name: 'employee',
         message: 'Select the employee you want to update:',
-        choices: allEmployees
+        choices: viewEmployees()
 
     },
 
@@ -116,8 +125,10 @@ const updateEmployeeQuestions =[
         message: 'Whats the new role of the employee',
         choices: allRoles
     }
+
 ];
 
+//function to get all departments and use it to add new role
 function viewAllDepartmentsByName() {
     const sql = 'SELECT * FROM department'
     db.query(sql, function (err, results) {
@@ -132,6 +143,7 @@ function viewAllDepartmentsByName() {
     });
 };
 
+//function to get all roles and use it to create new employee
 function viewRoles() {
     const sql = 'SELECT * FROM role'
     db.query(sql, function (err, results) {
@@ -145,7 +157,7 @@ function viewRoles() {
         }
     });
 };
-
+//function to get all employees to use on update employee function
 function viewEmployees() {
     const sql = 'SELECT * FROM employee'
     db.query(sql, function (err, results) {
@@ -155,14 +167,14 @@ function viewEmployees() {
         } else {
             for (let i = 0; i < results.length; i++) {
                 allEmployees.push(results[i].first_name + " " + results[i].last_name);
-            } console.log(allEmployees)
+            }
         }
     });
-}
+    return allEmployees;
+};
 
 
-
-// Query database
+// function to view all Departments
 function viewAllDepartments() {
     const sql = 'SELECT * FROM department'
     db.query(sql, function (err, results) {
@@ -178,7 +190,7 @@ function viewAllDepartments() {
     // init();
 }
 
-
+// function to view all roles
 function viewAllRoles() {
 
     const sql = 'SELECT role.id, role.title, role.salary, role.department_id, department.dept_name FROM role JOIN department ON role.department_id = department.id;'
@@ -192,20 +204,24 @@ function viewAllRoles() {
         }
     });
 
-    // init();
 }
 
-
+//function to view all Employees
 function viewAllEmployees() {
     const sql = 'SELECT employee.id, employee.first_name, employee.last_name, employee.role_id, role.title, role.salary, role.department_id, department.dept_name FROM employee JOIN role ON employee.role_id = role.id JOIN department ON employee.role_id = department.id;'
     db.query(sql, function (err, results) {
-        console.table(results);
+         if (err) {
+            console.log(err.message);
+            init()
+        } else {
+            console.table(results);
+            init()
+        }
     });
 
-    // init();
 }
 
-
+// function to add a new department
 function addDepartment() {
     inquirer.prompt(departmentQuestion).then((data) => {
         const newDepartment = data.dept_name;
@@ -218,31 +234,28 @@ function addDepartment() {
         });
     });
 
-    // init();
+  
 };
 
+//function to add a new role
 function addRole() {
     //get list of current departments
     viewAllDepartmentsByName();
-    // set depID index = 1
+    
     let depID = 0;
     inquirer.prompt(roleQuestions).then((answers) => {
-        //log results from input
-        console.log(answers.title);
+        
+       
         let salary = parseInt(answers.salary);
-        console.log(salary);
-        console.log(answers.department);
-        console.log(allDpts);
+        
 
         //get department id by looping through list of dep
         for (let i = 0; i < allDpts.length; i++) {
-            // if the answer matches any of the departments in list
-            // dep id = index + 1 of department in list
+            
             if (allDpts[i] === answers.department) {
-                console.log(allDpts[i]);
-                console.log(answers.department);
+               
                 depID = i + 1;
-                console.log(depID);
+                
             }
         }
 
@@ -252,7 +265,7 @@ function addRole() {
             salary: salary,
             department_id: depID
         };
-        console.log(params);
+
         db.query(sql, params, (err, result) => {
             if (err) {
                 console.log(err.message);
@@ -260,18 +273,20 @@ function addRole() {
             }
             else {
                 console.table(result);
-                // reset department list to empty array 
+                // reset all departments to empty
                 allDpts = []
-                // call main menu
+                // call init
                 init();
             }
         });
     });
 };
 
+//function to add a new employee
 function addEmployee() {
-
+//get all roles to be used on questions
     viewRoles();
+
     let rolesId = 0
     inquirer.prompt(employeeQuestions).then((answers) => {
         //log results from input
@@ -281,8 +296,7 @@ function addEmployee() {
         console.log(allRoles);
 
         for (let i = 0; i < allRoles.length; i++) {
-            // if the answer matches any of the departments in list
-            // dep id = index + 1 of department in list
+            
             if (allRoles[i] === answers.roles) {
                 console.log(allRoles[i]);
                 console.log(answers.roles);
@@ -306,9 +320,9 @@ function addEmployee() {
             }
             else {
                 console.table(result);
-                // reset department list to empty array 
+                // reset role list to empty array
                 allRoles = []
-                // call main menu
+                // call init function
                 init();
             }
         });
@@ -316,13 +330,26 @@ function addEmployee() {
 
 }
 
+//function to update an Employee role
 function updateEmployee(){
-
-    viewEmployees();
-
+    viewRoles();
     
-    
+    inquirer.prompt(updateEmployeeQuestions).then((data) => {
 
+        console.log(data.employee);
+        console.log(data.roles);
+
+        let fullName = data.employee.split(' ');
+        let fname = fullName[0];
+        let lname = fullName[1];
+
+
+
+
+
+        
+        
+    });
 }
 
 
@@ -330,7 +357,7 @@ function updateEmployee(){
 app.use((req, res) => {
     res.status(404).end();
 });
-
+// set to listen to PORT
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
@@ -338,7 +365,7 @@ app.listen(PORT, () => {
 
 
 
-
+// initial function 
 function init() {
 
     inquirer.prompt(introQuestion).then((data) => {
